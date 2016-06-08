@@ -1,8 +1,6 @@
 # IseshimaStore
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/iseshima_store`. To experiment with that code, run `bin/console` for an interactive prompt.
-
-TODO: Delete this and the text above, and describe your gem
+Simple ruby ORM for Google Cloud Datastore.
 
 ## Installation
 
@@ -22,7 +20,15 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+You need to set project_id.
+
+```
+IseshimaStore::Connection.configure do |config|
+  config.project_id = 'xxxx'
+end
+```
+
+Iseshima Store depends on `gcloud-ruby` which uses ENV variables.
 
 ## Development
 
