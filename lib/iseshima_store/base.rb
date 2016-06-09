@@ -5,8 +5,9 @@ require 'iseshima_store/relation'
 #http://googlecloudplatform.github.io/gcloud-ruby/docs/master/Gcloud/Datastore.html
 
 module IseshimaStore
-  module Base
+  class EntityNotFound < StandardError; end
 
+  module Base
     def self.included(klass)
       klass.extend SingleForwardable
       klass.extend ClassMethods
@@ -28,7 +29,11 @@ module IseshimaStore
         datastore = IseshimaStore::Connection.current
         key = datastore.key(self.to_s, _id.to_i)
         entity = datastore.find(key)
-        from_entity(entity)
+        if entity
+          from_entity(entity)
+        else
+          raise EntityNotFound.new("cannot find entity with id #{_id}")
+        end
       end
 
       def attr_properties(*args)
