@@ -1,4 +1,4 @@
-# IseshimaStore
+# IseshimaStore :dolls:
 
 Simple ruby ORM for Google Cloud Datastore.
 
@@ -20,6 +20,8 @@ Or install it yourself as:
 
 ## Usage
 
+### Setup
+
 You need to set project_id.
 
 ```
@@ -28,17 +30,53 @@ IseshimaStore::Connection.configure do |config|
 end
 ```
 
-Iseshima Store depends on `gcloud-ruby` which uses ENV variables.
+Iseshima Store depends on `gcloud-ruby` which uses ENV variables, you can set your variables through ENV.
 
-## Development
+### Model
 
-After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake test` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
+```
+class User
+  include IseshimaStore::Base
+  attr_accessor :name, :email
+end
+```
 
-To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and tags, and push the `.gem` file to [rubygems.org](https://rubygems.org).
+The only thing you have to do is just include `IseshimaStore::Base` in your model class.
+Any class is ok to use.
 
-## Contributing
+### Create
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/iseshima_store. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [Contributor Covenant](contributor-covenant.org) code of conduct.
+```
+user = User.new
+user.email = 'test@test.com'
+user.name = 'hoge@fuga.com'
+user.save!
+```
+
+IseshimaStore does not have validations. 
+Another gem like `ActiveModel` is recommended to combine.
+
+### Finder
+
+```
+users = User.where(email: 'test@test.com')
+user = User.find_by(email: 'test@test.com')
+user = User.find(12345) # id
+```
+
+### Low level search
+
+```
+query = Gcloud::Datastore::Query.new
+query.kind('User')
+query.where('email', '=', 'test@test.com')
+res = User.search(query: query)
+users = res[:records]
+```
+
+If you need `limit` & `cursor`, use this API.
+
+
 
 
 ## License
