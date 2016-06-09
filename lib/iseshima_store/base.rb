@@ -10,10 +10,10 @@ module IseshimaStore
     def self.included(klass)
       klass.extend SingleForwardable
       klass.extend ClassMethods
-      klass.def_delegators :scoping, :where, :all, :to_a
+      klass.def_delegators :scoping, :where, :all, :first, :last, :to_a
 
       klass.instance_eval do
-        attr_accessor :created_at, :description
+        attr_accessor :id, :created_at, :description
       end
     end
 
@@ -32,16 +32,12 @@ module IseshimaStore
       end
 
       def attr_properties(*args)
+        attr_accessor(*args)
         @properties = args
       end
 
       def find_by(hash)
-        key, value = hash.keys.first.to_s, hash.values.first.to_s
-        query = Gcloud::Datastore::Query.new
-        query.kind(self.to_s)
-        query.where(key, '=', value)
-        results = IseshimaStore::Connection.current.run(query)
-        results.map { |entity| from_entity(entity) }.first
+        where(hash).first
       end
 
       def from_entity(entity)
@@ -91,9 +87,17 @@ module IseshimaStore
     def to_entity
       entity = Gcloud::Datastore::Entity.new
       entity.key = Gcloud::Datastore::Key.new(self.class.to_s, id)
+      unless self.class.properties
+        raise StandardError.new("You have to define attr_properties in your model")
+      end
+
       self.class.properties.each do |property|
         property = property.to_s
-        entity[property] = send(property)
+        value = send(property)
+        if value.is_a?(String)
+          value = value.force_encoding('UTF-8')
+        end
+        entity[property] = value
       end
       entity
     end
