@@ -11,15 +11,25 @@ module IseshimaStore
     def self.included(klass)
       klass.extend SingleForwardable
       klass.extend ClassMethods
-      klass.def_delegators :scoping, :where, :all, :first, :last, :to_a
+      klass.def_delegators :scoping,
+        :where,
+        :all,
+        :first,
+        :last,
+        :to_a,
+        :parent
 
       klass.instance_eval do
-        attr_accessor :id, :created_at, :description
+        attr_accessor :id, :created_at, :description, :parent_key
       end
     end
 
     module ClassMethods
       attr_reader :properties
+
+      def destroy_all
+        scoping.each(&:destroy)
+      end
 
       def scoping
         IseshimaStore::Relation.new(self)
@@ -49,8 +59,11 @@ module IseshimaStore
         instance = self.new
         instance.id = entity.key.id
         entity.properties.to_hash.each do |name, value|
-          instance.send "#{name}=", value
+          if instance.respond_to?("#{name}=")
+            instance.send "#{name}=", value
+          end
         end
+        instance.parent_key = entity.key.parent
         instance
       end
 
@@ -105,6 +118,21 @@ module IseshimaStore
         entity[property] = value
       end
       entity
+    end
+
+    def parent
+      return @parent if @parent
+
+      if @parent_key
+        klass = @parent_key.kind.constantize
+        if klass.include?(IseshimaStore::Base)
+          @parent = klass.find(@parent_key.id)
+        end
+      end
+    end
+
+    def key
+      to_entity.key
     end
   end
 end

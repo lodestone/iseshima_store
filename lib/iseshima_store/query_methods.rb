@@ -9,6 +9,11 @@ module IseshimaStore
       self
     end
 
+    def parent(model)
+      @parent_key = model.key
+      self
+    end
+
     def all
       to_a
     end
@@ -19,7 +24,9 @@ module IseshimaStore
       @where_clause.conditions.each do |condition|
         query.where(*condition)
       end
-
+      if @parent_key
+        query.ancestor(@parent_key)
+      end
       results = IseshimaStore::Connection.current.run(query)
       results.map { |entity| @klass.from_entity(entity) }
     end
