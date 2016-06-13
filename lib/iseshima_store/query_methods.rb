@@ -10,12 +10,18 @@ module IseshimaStore
     end
 
     def parent(model)
-      @parent_key = model.key
+      if model.respond_to?(:key)
+        @parent_key = model.key
+      end
       self
     end
 
     def all
       to_a
+    end
+
+    def exists?
+      to_a.length > 0
     end
 
     def to_a
@@ -33,6 +39,18 @@ module IseshimaStore
 
     def inspect
       to_a.inspect
+    end
+
+    def find(_id)
+      entity = where(id: _id).first
+      unless entity
+        raise EntityNotFound.new("cannot find entity with id #{_id}")
+      end
+      entity
+    end
+
+    def find_by(hash)
+      where(hash).first
     end
   end
 end

@@ -12,7 +12,7 @@ module IseshimaStore
 
     def initialize(klass)
       @klass = klass
-      @where_clause = IseshimaStore::WhereClause.new
+      @where_clause = IseshimaStore::WhereClause.new(@klass)
     end
 
     def spawn

@@ -17,7 +17,9 @@ module IseshimaStore
         :first,
         :last,
         :to_a,
-        :parent
+        :parent,
+        :find,
+        :find_by
 
       klass.instance_eval do
         attr_accessor :id, :created_at, :description, :parent_key
@@ -35,24 +37,9 @@ module IseshimaStore
         IseshimaStore::Relation.new(self)
       end
 
-      def find(_id)
-        datastore = IseshimaStore::Connection.current
-        key = datastore.key(self.to_s, _id.to_i)
-        entity = datastore.find(key)
-        if entity
-          from_entity(entity)
-        else
-          raise EntityNotFound.new("cannot find entity with id #{_id}")
-        end
-      end
-
       def attr_properties(*args)
         attr_accessor(*args)
         @properties = args
-      end
-
-      def find_by(hash)
-        where(hash).first
       end
 
       def from_entity(entity)
@@ -92,21 +79,39 @@ module IseshimaStore
 
     def save!
       entity = to_entity
+      if @parent_key == ''
+        entity.key.parent = nil
+      else
+        entity.key.parent = @parent_key
+      end
       IseshimaStore::Connection.current.save(entity)
       self.id = entity.key.id
       self
     end
 
     def destroy
-      entity = to_entity
-      IseshimaStore::Connection.current.delete(entity)
+      if key.parent
+        key.parent = nil
+      end
+      IseshimaStore::Connection.current.delete(key)
+    end
+
+    def assign_entities(hash)
+      hash.each { |k, v|
+        k = k.to_s
+        if respond_to? "#{k}="
+          send("#{k}=", v)
+        end
+      }
+      self
     end
 
     def to_entity
       entity = Gcloud::Datastore::Entity.new
       entity.key = Gcloud::Datastore::Key.new(self.class.to_s, id)
       unless self.class.properties
-        raise StandardError.new("You have to define attr_properties in your model")
+        logger = Logger.new(STDOUT)
+        logger.warn "You may have to define attr_properties in your model"
       end
 
       self.class.properties.each do |property|
@@ -120,11 +125,20 @@ module IseshimaStore
       entity
     end
 
+    def parent=(model)
+      if model
+        key = model.to_entity.key
+        self.parent_key = key
+      else
+        self.parent_key = ''
+      end
+    end
+
     def parent
       return @parent if @parent
 
       if @parent_key
-        klass = @parent_key.kind.constantize
+        klass = Object.const_get(@parent_key.kind)
         if klass.include?(IseshimaStore::Base)
           @parent = klass.find(@parent_key.id)
         end

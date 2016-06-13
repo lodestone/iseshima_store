@@ -11,8 +11,16 @@ module IseshimaStore
       yield(config)
     end
 
+    def self.datastore
+      Gcloud.datastore(config.project_id)
+    end
+
     def self.current
       @current ||= Gcloud.datastore(config.project_id)
+    end
+
+    def self.clear_connection!
+      @current = nil
     end
   end
 end
