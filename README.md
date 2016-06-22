@@ -24,7 +24,7 @@ Or install it yourself as:
 
 You need to set project_id.
 
-```
+```ruby
 IseshimaStore::Connection.configure do |config|
   config.project_id = 'xxxx'
 end
@@ -34,39 +34,80 @@ Iseshima Store depends on `gcloud-ruby` which uses ENV variables, you can set yo
 
 ### Model
 
-```
+```ruby
 class User
   include IseshimaStore::Base
-  attr_accessor :name, :email
+  attr_properties :name, :email
 end
 ```
 
-The only thing you have to do is just include `IseshimaStore::Base` in your model class.
+The only thing you have to do is just 2 things.
+
+1. include `IseshimaStore::Base` in your model class.
+2. declare your properties with `attr_properties`
+
 Any class is ok to use.
 
 ### Create
 
-```
+```ruby
 user = User.new
-user.email = 'test@test.com'
-user.name = 'hoge@fuga.com'
+user.email = 'taro@test.com'
+user.name = 'taro'
 user.save!
 ```
 
-IseshimaStore does not have validations. 
+or
+
+```ruby
+User.new.assign_attributes(
+  email: 'taro@test.com',
+  name: 'taro'
+).save!
+```
+
+### Save or Delete
+
+```
+# save
+user = User.first
+user.assign_attributes(email: 'taro@test.jp')
+user.save!
+
+# delete
+user.destroy
+```
+
+IseshimaStore does not have validations.
 Another gem like `ActiveModel` is recommended to combine.
 
 ### Finder
 
-```
+```ruby
 users = User.where(email: 'test@test.com')
 user = User.find_by(email: 'test@test.com')
 user = User.find(12345) # id
+
+# You can chain queries.
+user = User.where(visible: true).find(10)
 ```
+
+### Relation
+
+
+```ruby
+diary = Diary.new
+diary.title = 'My nightmare'
+diary.parent = user
+diary.save!
+```
+
+`parent=(model)` sets model's key to the key's parent of instance.
+
 
 ### Low level search
 
-```
+```ruby
 query = Gcloud::Datastore::Query.new
 query.kind('User')
 query.where('email', '=', 'test@test.com')
@@ -75,8 +116,6 @@ users = res[:records]
 ```
 
 If you need `limit` & `cursor`, use this API.
-
-
 
 
 ## License

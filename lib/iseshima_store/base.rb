@@ -90,9 +90,6 @@ module IseshimaStore
     end
 
     def destroy
-      if key.parent
-        key.parent = nil
-      end
       IseshimaStore::Connection.current.delete(key)
     end
 
@@ -146,7 +143,16 @@ module IseshimaStore
     end
 
     def key
-      to_entity.key
+      path = []
+      obj = self
+      path << [obj.class.to_s, obj.id]
+
+      while obj.parent
+        obj = obj.parent
+        path << [obj.class.to_s, obj.id]
+      end
+
+      IseshimaStore::Connection.current.key(path.reverse)
     end
   end
 end
